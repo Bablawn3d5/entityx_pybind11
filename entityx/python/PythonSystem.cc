@@ -14,6 +14,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include "entityx/python/PythonScript.hpp"
 #include "entityx/python/PythonSystem.h"
 #include "entityx/python/config.h"
 
@@ -55,7 +56,7 @@ private:
  * Base class for Python entities.
  */
 struct PythonEntity {
-  explicit PythonEntity(EntityManager* entity_manager, Entity::Id id) : _entity(Entity(entity_manager, id)) {}  // NOLINT
+  explicit PythonEntity(EntityManager& entity_manager, Entity::Id id) : _entity(Entity(&entity_manager, id)) {}  // NOLINT
   virtual ~PythonEntity() {}
 
   operator Entity () const { return _entity; }
@@ -110,7 +111,7 @@ PYBIND11_PLUGIN(_entityx) {
     .def_property_readonly("id", &Entity::id);
 
   py::class_<PythonEntity>(m, "Entity")
-    .def(py::init<EntityManager*, Entity::Id>())
+    .def(py::init<EntityManager&, Entity::Id>())
     .def_property_readonly("valid", &PythonEntity::valid)
     .def_property_readonly("id", &PythonEntity::_entity_id)
     .def_readwrite("entity", &PythonEntity::_entity)

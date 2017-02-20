@@ -19,6 +19,7 @@
 #include <memory>
 #include "entityx/python/3rdparty/catch.hpp"
 #include "entityx/entityx.h"
+#include "entityx/python/PythonScript.hpp"
 #include "entityx/python/PythonSystem.h"
 
 namespace py = pybind11;

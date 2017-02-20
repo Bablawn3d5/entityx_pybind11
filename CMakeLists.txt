@@ -145,6 +145,7 @@ set(install_libs entityx_python)
 # Inclue headers here so they appear in visual studio.
 set(sources entityx/python/PythonSystem.cc
             entityx/python/PythonSystem.h
+            entityx/python/PythonScript.hpp
             entityx/python/config.h)
 add_library(entityx_python STATIC ${sources})
 set_target_properties(entityx_python PROPERTIES DEBUG_POSTFIX -d FOLDER entityx)
@@ -173,7 +174,7 @@ endif (ENTITYX_PYTHON_BUILD_TESTING)
 install(
     DIRECTORY "entityx/python/"
     DESTINATION "include"
-    FILES_MATCHING PATTERN "*.h"
+    FILES_MATCHING PATTERN "*.h*"
     )
 
 install(

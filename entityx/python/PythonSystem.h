@@ -23,43 +23,9 @@ namespace py = pybind11;
 
 namespace entityx {
 namespace python {
-/**
- * An EntityX component that represents a Python script.
- */
-class PythonScript {
-public:
-  /**
-   * Create a new PythonScript from a Python Entity class.
-   *
-   * @param module The Python module where the Entity subclass resides.
-   * @param cls The Class within the module. Must inherit from entityx.Entity.
-   * @param args The *args to pass to the Python constructor.
-   */
-  template <typename ...Args>
-  PythonScript(const std::string &module, const std::string &cls, Args ... args) : module(module), cls(cls) {
-    unpack_args(args...);
-  }
-
-  /**
-   * Create a new PythonScript from an existing Python instance.
-   */
-  explicit PythonScript(py::object object) : object(object) {}
-
-  py::object object;
-  py::list args;
-  const std::string module, cls;
-
-private:
-  template <typename A, typename ...Args>
-  void unpack_args(A &arg, Args ... remainder) {
-    args.append(arg);
-    unpack_args(remainder...);
-  }
-
-  void unpack_args() {}
-};
 
 class PythonSystem;
+struct PythonScript;
 
 /**
  * A helper function for class_ to assign a component to an entity.
