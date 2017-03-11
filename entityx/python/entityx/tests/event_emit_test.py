@@ -3,7 +3,7 @@ from entityx_python_test import Collision
 
 
 class AnEntity(Entity):
-    pass
+	pass
 
 
 def emit_collision_from_python():

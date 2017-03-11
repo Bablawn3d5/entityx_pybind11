@@ -93,7 +93,8 @@ TEST_CASE_METHOD(PythonSystemTest, "TestSystemUpdateCallsEntityUpdate") {
     REQUIRE(entity_manager.size() == 1);
   }
   catch ( py::error_already_set& e ) {
-    std::cerr << e.what();
+	// TODO(SMA) : Really!? fix this. Should handle execption e better here.
+	PyErr_SetString(PyExc_RuntimeError, e.what());
     PyErr_Print();
     REQUIRE(false);
   }
@@ -115,7 +116,8 @@ TEST_CASE_METHOD(PythonSystemTest, "TestComponentAssignmentCreationInPython") {
     REQUIRE(position->y == 2.0);
   }
   catch ( py::error_already_set& e ) {
-    std::cerr << e.what();
+	// TODO(SMA) : Really!? fix this. Should handle execption e better here.
+	PyErr_SetString(PyExc_RuntimeError, e.what());
     PyErr_Print();
     PyErr_Clear();
     REQUIRE(false);
@@ -137,7 +139,8 @@ TEST_CASE_METHOD(PythonSystemTest, "TestComponentAssignmentCreationInCpp") {
     REQUIRE(position->y == 4.0);
   }
   catch ( py::error_already_set& e ) {
-    std::cerr << e.what();
+	// TODO(SMA) : Really!? fix this. Should handle execption e better here.
+	PyErr_SetString(PyExc_RuntimeError, e.what());
     PyErr_Print();
     PyErr_Clear();
     REQUIRE(false);
@@ -154,7 +157,8 @@ TEST_CASE_METHOD(PythonSystemTest, "TestEntityConstructorArgs") {
     REQUIRE(position->y == 5.0);
   }
   catch ( py::error_already_set& e ) {
-    std::cerr << e.what();
+	// TODO(SMA) : Really!? fix this. Should handle execption e better here.
+	PyErr_SetString(PyExc_RuntimeError, e.what());
     PyErr_Print();
     PyErr_Clear();
     REQUIRE(false);
@@ -202,7 +206,8 @@ TEST_CASE_METHOD(PythonSystemTest, "TestDeepEntitySubclass") {
     script2->object.attr("test_deeper_subclass")();
   }
   catch ( py::error_already_set& e ) {
-    std::cerr << e.what();
+	  // TODO(SMA) : Really!? fix this. Should handle execption e better here.
+	  PyErr_SetString(PyExc_RuntimeError, e.what());
     PyErr_Print();
     PyErr_Clear();
     REQUIRE(false);
@@ -215,7 +220,8 @@ TEST_CASE_METHOD(PythonSystemTest, "TestEntityCreationFromPython") {
     test.attr("create_entities_from_python_test")();
   }
   catch ( py::error_already_set& e ) {
-    std::cerr << e.what();
+    // TODO(SMA) : Really!? fix this. Should handle execption e better here.
+    PyErr_SetString(PyExc_RuntimeError, e.what());
     PyErr_Print();
     PyErr_Clear();
     REQUIRE(false);

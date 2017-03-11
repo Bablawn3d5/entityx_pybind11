@@ -55,9 +55,13 @@ private:
 /**
  * Base class for Python entities.
  */
+	/*FIXME(SMA): Doesn't work :(. I've ported it to Python entityx/__init__.py 
 struct PythonEntity {
-  explicit PythonEntity(EntityManager& entity_manager, Entity::Id id) : _entity(Entity(&entity_manager, id)) {}  // NOLINT
+  explicit PythonEntity(Entity& e) : _entity(e) {
+    assert(_entity.valid());
+  }
   virtual ~PythonEntity() {}
+  explicit PythonEntity(const PythonEntity &) = delete;
 
   operator Entity () const { return _entity; }
 
@@ -65,13 +69,10 @@ struct PythonEntity {
     _entity.destroy();
   }
 
-  void set_entity(Entity e) {
-    _entity = e;
-  }
-
   virtual void update(float dt) {}
 
   Entity::Id _entity_id() const {
+    assert(_entity.valid());
     return _entity.id();
   }
 
@@ -80,13 +81,7 @@ struct PythonEntity {
   }
 
   Entity _entity;
-};
-
-static std::string PythonEntity_repr(const PythonEntity &entity) {
-  std::stringstream repr;
-  repr << "<Entity " << entity._entity.id().index() << "." << entity._entity.id().version() << ">";
-  return repr.str();
-}
+};/**/
 
 static std::string Entity_Id_repr(Entity::Id id) {
   std::stringstream repr;
@@ -108,16 +103,19 @@ PYBIND11_PLUGIN(_entityx) {
 
   py::class_<Entity>(m, "_Entity")
     .def(py::init<EntityManager*, Entity::Id>())
-    .def_property_readonly("id", &Entity::id);
+    .def_property_readonly("id", &Entity::id)
+    .def("valid", &Entity::valid)
+    .def("destroy", &Entity::destroy);
 
-  py::class_<PythonEntity>(m, "Entity")
-    .def(py::init<EntityManager&, Entity::Id>())
-    .def_property_readonly("valid", &PythonEntity::valid)
-    .def_property_readonly("id", &PythonEntity::_entity_id)
-    .def_readwrite("entity", &PythonEntity::_entity)
-    .def("update", &PythonEntity::update)
-    .def("destroy", &PythonEntity::destroy)
-    .def("__repr__", &PythonEntity_repr);
+	//FIXME(SMA): I really have no clue none of these are working...
+  //py::class_<PythonEntity>(m, "Entity")
+    //.def_readwrite("entity", &PythonEntity::_entity, py::return_value_policy::reference);
+    //.def_property_readonly("id", &PythonEntity::_entity_id)
+    //.def("valid", &PythonEntity::valid)
+    //.def("update", &PythonEntity::update)
+    //.def("destroy", &PythonEntity::destroy);
+
+  //py::implicitly_convertible<PythonEntity, Entity>();
 
   py::class_<Entity::Id>(m, "EntityId")  // no init
     .def_property_readonly("id", &Entity::Id::id)
@@ -132,9 +130,7 @@ PYBIND11_PLUGIN(_entityx) {
                 py::return_value_policy::reference);
 
   py::class_<EntityManager>(m, "EntityManager") // no init
-    .def("new_entity", &EntityManager_new_entity);
-
-  py::implicitly_convertible<PythonEntity, Entity>();
+    .def("new_entity", &EntityManager_new_entity, py::return_value_policy::copy);
 
   return m.ptr();
 }
@@ -217,7 +213,9 @@ void PythonSystem::configure(EventManager& ev) {
     py::object entityx = py::module::import("_entityx");
     entityx.attr("_entity_manager") = &em_;
   }
-  catch ( ... ) {
+  catch ( const py::error_already_set& e ) {
+    // TODO(SMA) : Really!? fix this. Should handle execption e better here.
+    PyErr_SetString(PyExc_RuntimeError, e.what());
     PyErr_Print();
     PyErr_Clear();
     throw;
@@ -232,7 +230,9 @@ void PythonSystem::update(EntityManager & em,
       // Access PythonEntity and call Update.
       python.object.attr("update")(dt);
     }
-    catch ( const py::error_already_set& ) {
+    catch ( const py::error_already_set& e ) {
+      // TODO(SMA) : Really!? fix this. Should handle execption e better here.
+      PyErr_SetString(PyExc_RuntimeError, e.what());
       PyErr_Print();
       PyErr_Clear();
       throw;
@@ -257,9 +257,18 @@ void PythonSystem::receive(const ComponentAddedEvent<PythonScript> &event) {
       args.append(event.component->args);
     }
     py::dict kwargs;
-    kwargs["entity"] = event.entity;
+    kwargs["entity"] = &event.entity;
     ComponentHandle<PythonScript> p = event.component;
-    p->object = from_raw_entity( *args, **py::kwargs(kwargs));
+    try {
+      // Access PythonEntity and call Update.
+      p->object = from_raw_entity(*args, **py::kwargs(kwargs));
+    }
+    catch ( const py::error_already_set& e ) {
+      PyErr_SetString(PyExc_RuntimeError, e.what());
+      PyErr_Print();
+      PyErr_Clear();
+      throw;
+    }
   }
 }
 
