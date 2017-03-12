@@ -1,5 +1,5 @@
 import _entityx
-
+import json, operator
 
 """These classes provide a convenience layer on top of the raw entityx::python
 primitives.
@@ -80,7 +80,6 @@ class Entity(object):
         self = object.__new__(cls, *args, **kwargs)
         if entity is None:
             entity = _entityx._entity_manager.new_entity(self)
-        cls.__init__(self, *args, **kwargs)
         # Initalize self.entity 
         self.entity = entity
         for k, v in self._components.items():
@@ -91,7 +90,7 @@ class Entity(object):
         """Default constructor."""
 
     def __repr__(self):
-        return '<%s.%s %s.%s>' % (self.__class__.__module__, self.__class__.__name__, self.entity.id.index, self.entity.id.version)
+        return '<%s.%s(%s.%s)>' % (self.__class__.__module__, self.__class__.__name__, self.entity.id.index, self.entity.id.version)
 
     @property
     def id(self):
@@ -99,6 +98,9 @@ class Entity(object):
 
     def destroy(self):
         return self.entity.destroy()
+
+    def valid(self):
+        return self.entity.valid()
 
     @classmethod
     def _from_raw_entity(cls, *args, **kwargs):

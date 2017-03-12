@@ -93,9 +93,10 @@ TEST_CASE_METHOD(PythonSystemTest, "TestSystemUpdateCallsEntityUpdate") {
     REQUIRE(entity_manager.size() == 1);
   }
   catch ( py::error_already_set& e ) {
-	// TODO(SMA) : Really!? fix this. Should handle execption e better here.
-	PyErr_SetString(PyExc_RuntimeError, e.what());
+    // TODO(SMA) : Really!? fix this. Should handle execption e better here.
+    PyErr_SetString(PyExc_RuntimeError, e.what());
     PyErr_Print();
+    PyErr_Clear();
     REQUIRE(false);
   }
 }
@@ -109,15 +110,16 @@ TEST_CASE_METHOD(PythonSystemTest, "TestComponentAssignmentCreationInPython") {
     REQUIRE(static_cast<bool>(e.component<Position>()));
     REQUIRE(script->object);
     REQUIRE(script->object.attr("test_assign_create").ptr());
-    script->object.attr("test_assign_create")();
+    py::function f = script->object.attr("test_assign_create");
+    f.call();
     auto position = e.component<Position>();
     REQUIRE(static_cast<bool>(position));
     REQUIRE(position->x == 1.0);
     REQUIRE(position->y == 2.0);
   }
   catch ( py::error_already_set& e ) {
-	// TODO(SMA) : Really!? fix this. Should handle execption e better here.
-	PyErr_SetString(PyExc_RuntimeError, e.what());
+    // TODO(SMA) : Really!? fix this. Should handle execption e better here.
+    PyErr_SetString(PyExc_RuntimeError, e.what());
     PyErr_Print();
     PyErr_Clear();
     REQUIRE(false);
@@ -139,8 +141,8 @@ TEST_CASE_METHOD(PythonSystemTest, "TestComponentAssignmentCreationInCpp") {
     REQUIRE(position->y == 4.0);
   }
   catch ( py::error_already_set& e ) {
-	// TODO(SMA) : Really!? fix this. Should handle execption e better here.
-	PyErr_SetString(PyExc_RuntimeError, e.what());
+    // TODO(SMA) : Really!? fix this. Should handle execption e better here.
+    PyErr_SetString(PyExc_RuntimeError, e.what());
     PyErr_Print();
     PyErr_Clear();
     REQUIRE(false);
@@ -157,41 +159,13 @@ TEST_CASE_METHOD(PythonSystemTest, "TestEntityConstructorArgs") {
     REQUIRE(position->y == 5.0);
   }
   catch ( py::error_already_set& e ) {
-	// TODO(SMA) : Really!? fix this. Should handle execption e better here.
-	PyErr_SetString(PyExc_RuntimeError, e.what());
+    // TODO(SMA) : Really!? fix this. Should handle execption e better here.
+    PyErr_SetString(PyExc_RuntimeError, e.what());
     PyErr_Print();
     PyErr_Clear();
     REQUIRE(false);
   }
 }
-
-// TODO(SMA) : Implement events
-//TEST_CASE_METHOD(PythonSystemTest, "TestEventDelivery") {
-//  try {
-//    Entity f = entity_manager.create();
-//    Entity e = entity_manager.create();
-//    Entity g = entity_manager.create();
-//    auto scripte = e.assign<PythonScript>("entityx.tests.event_test", "EventTest");
-//    auto scriptf = f.assign<PythonScript>("entityx.tests.event_test", "EventTest");
-//    auto scriptg = g.assign<PythonScript>("entityx.tests.event_test", "EventTest");
-//    REQUIRE(!scripte->object.attr("collided"));
-//    REQUIRE(!scriptf->object.attr("collided"));
-//    REQUIRE(!scriptg->object.attr("collided"));
-//    event_manager.emit<CollisionEvent>(f, g);
-//    REQUIRE(scriptf->object.attr("collided"));
-//    REQUIRE(!scripte->object.attr("collided"));
-//    REQUIRE(scriptg->object.attr("collided"));
-//    event_manager.emit<CollisionEvent>(e, f);
-//    REQUIRE(scriptf->object.attr("collided"));
-//    REQUIRE(scripte->object.attr("collided"));
-//    REQUIRE(scriptg->object.attr("collided"));
-//  }
-//  catch ( ... ) {
-//    PyErr_Print();
-//    PyErr_Clear();
-//    REQUIRE(false);
-//  }
-//}
 
 TEST_CASE_METHOD(PythonSystemTest, "TestDeepEntitySubclass") {
   try {
@@ -206,8 +180,8 @@ TEST_CASE_METHOD(PythonSystemTest, "TestDeepEntitySubclass") {
     script2->object.attr("test_deeper_subclass")();
   }
   catch ( py::error_already_set& e ) {
-	  // TODO(SMA) : Really!? fix this. Should handle execption e better here.
-	  PyErr_SetString(PyExc_RuntimeError, e.what());
+    // TODO(SMA) : Really!? fix this. Should handle execption e better here.
+    PyErr_SetString(PyExc_RuntimeError, e.what());
     PyErr_Print();
     PyErr_Clear();
     REQUIRE(false);
@@ -227,35 +201,3 @@ TEST_CASE_METHOD(PythonSystemTest, "TestEntityCreationFromPython") {
     REQUIRE(false);
   }
 }
-
-// TODO(SMA) : Implement events
-//TEST_CASE_METHOD(PythonSystemTest, "TestEventEmissionFromPython") {
-//  try {
-//    struct CollisionReceiver : public Receiver<CollisionReceiver> {
-//      void receive(const CollisionEvent &event) {
-//        a = event.a;
-//        b = event.b;
-//      }
-//
-//      Entity a, b;
-//    };
-//
-//    CollisionReceiver receiver;
-//    event_manager.subscribe<CollisionEvent>(receiver);
-//
-//    REQUIRE(!receiver.a);
-//    REQUIRE(!receiver.b);
-//
-//    py::object test = py::import("entityx.tests.event_emit_test");
-//    test.attr("emit_collision_from_python")();
-//
-//    REQUIRE(receiver.a);
-//    REQUIRE(receiver.b);
-//    REQUIRE(receiver.a != receiver.b);
-//  }
-//  catch ( ... ) {
-//    PyErr_Print();
-//    PyErr_Clear();
-//    REQUIRE(false);
-//  }
-//}

@@ -55,7 +55,7 @@ private:
 /**
  * Base class for Python entities.
  */
-	/*FIXME(SMA): Doesn't work :(. I've ported it to Python entityx/__init__.py 
+/*FIXME(SMA): Doesn't work :(. I've ported it to Python entityx/__init__.py 
 struct PythonEntity {
   explicit PythonEntity(Entity& e) : _entity(e) {
     assert(_entity.valid());
@@ -81,7 +81,7 @@ struct PythonEntity {
   }
 
   Entity _entity;
-};/**/
+};*/
 
 static std::string Entity_Id_repr(Entity::Id id) {
   std::stringstream repr;
@@ -256,12 +256,12 @@ void PythonSystem::receive(const ComponentAddedEvent<PythonScript> &event) {
     if ( py::len(event.component->args) != 0 ) {
       args.append(event.component->args);
     }
-    py::dict kwargs;
-    kwargs["entity"] = &event.entity;
-    ComponentHandle<PythonScript> p = event.component;
+    py::kwargs kwargs;
+    kwargs["entity"] = Entity(event.entity);
     try {
       // Access PythonEntity and call Update.
-      p->object = from_raw_entity(*args, **py::kwargs(kwargs));
+      ComponentHandle<PythonScript> scripthandle = event.component;
+      scripthandle->object = from_raw_entity.call<py::return_value_policy::reference_internal>(*args, **kwargs);
     }
     catch ( const py::error_already_set& e ) {
       PyErr_SetString(PyExc_RuntimeError, e.what());
