@@ -12,6 +12,7 @@
 
  // NOTE: MUST be first include. See http://docs.python.org/2/extending/extending.html
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 #include <cassert>
 #include <vector>
 #include <string>
@@ -27,6 +28,7 @@ using std::cerr;
 using std::endl;
 using namespace entityx;
 using namespace entityx::python;
+using namespace pybind11::literals;
 
 struct Position {
   Position(float x = 0.0, float y = 0.0) : x(x), y(y) {}
@@ -54,7 +56,7 @@ PYBIND11_PLUGIN(entityx_python_test) {
   py::class_<Direction>(m, "Direction")
     .def(py::init<float, float>(), "x"_a = 0.f, "y"_a = 0.f)
     .def("assign_to", &assign_to<Direction>)
-    .def_static("get_component", &get_component<Position>,
+    .def_static("get_component", &get_component<Direction>,
                 py::return_value_policy::reference)
     .def_readwrite("x", &Direction::x)
     .def_readwrite("y", &Direction::y);
@@ -129,13 +131,13 @@ TEST_CASE_METHOD(PythonSystemTest, "TestComponentAssignmentCreationInPython") {
 TEST_CASE_METHOD(PythonSystemTest, "TestComponentAssignmentCreationInCpp") {
   try {
     Entity e = entity_manager.create();
-    e.assign<Position>(2.f, 3.f);
+    e.assign<Direction>(2.f, 3.f);
     auto script = e.assign<PythonScript>("entityx.tests.assign_test", "AssignTest");
-    REQUIRE(static_cast<bool>(e.component<Position>()));
+    REQUIRE(static_cast<bool>(e.component<Direction>()));
     REQUIRE(script->object);
     REQUIRE(script->object.attr("test_assign_existing").ptr());
     script->object.attr("test_assign_existing")();
-    auto position = e.component<Position>();
+    auto position = e.component<Direction>();
     REQUIRE(static_cast<bool>(position));
     REQUIRE(position->x == 3.0);
     REQUIRE(position->y == 4.0);
@@ -200,4 +202,48 @@ TEST_CASE_METHOD(PythonSystemTest, "TestEntityCreationFromPython") {
     PyErr_Clear();
     REQUIRE(false);
   }
+}
+
+TEST_CASE_METHOD(PythonSystemTest, "TestJSONOutputCpp") {
+    try {
+        Entity e = entity_manager.create();
+        e.assign<Position>(2.f, 4.f);
+        e.assign<Direction>(1.f, -1.f);
+        auto script = e.assign<PythonScript>("entityx.tests.json_test", "JsonTest");
+        REQUIRE(static_cast<bool>(e.component<Position>()));
+        REQUIRE(static_cast<bool>(e.component<Direction>()));
+        REQUIRE(script->object);
+        REQUIRE(script->object.attr("to_json").ptr());
+        py::object o = script->object.attr("to_json")();
+        auto position = e.component<Position>();
+        REQUIRE(static_cast<bool>(position));
+        REQUIRE(position->x == 2.0);
+        REQUIRE(position->y == 4.0);
+        auto direction = e.component<Direction>();
+        REQUIRE(static_cast<bool>(direction));
+        REQUIRE(direction->x == 1.0);
+        REQUIRE(direction->y == -1.0);
+        py::module m("json");
+        py::dict parsed = m.attr("loads").call(o);
+        // Incase you need to debug.
+        //for ( auto item : parsed )
+        //    py::print("key: {}, value={}"_s.format(item.first, item.second));
+
+        REQUIRE(py::cast<std::string>(parsed["entity"]["id"]) == "<Entity::Id 0.1>");
+        REQUIRE(py::cast<std::string>(parsed["id"]) == "<Entity::Id 0.1>");
+        REQUIRE(py::cast<std::string>(parsed["py_array"]) == "[1, 2, 3]");
+        py::dict py_pos = parsed["position"];
+        REQUIRE((float)py::float_(py_pos["x"]) == 2.0f);
+        REQUIRE((float)py::float_(py_pos["y"]) == 4.0f);
+        py::dict py_dir = parsed["direction"];
+        REQUIRE((float)py::float_(py_dir["x"]) == 1.0f);
+        REQUIRE((float)py::float_(py_dir["y"]) == -1.0f);
+    }
+    catch ( py::error_already_set& e ) {
+        // TODO(SMA) : Really!? fix this. Should handle execption e better here.
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        PyErr_Print();
+        PyErr_Clear();
+        REQUIRE(false);
+    }
 }
