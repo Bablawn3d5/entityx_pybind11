@@ -10,6 +10,7 @@
 
  // http://docs.python.org/2/extending/extending.html
 #include <pybind11/pybind11.h>
+#include <pybind11/eval.h>
 #include <cassert>
 #include <string>
 #include <iostream>
@@ -249,19 +250,23 @@ void PythonSystem::receive(const ComponentAddedEvent<PythonScript> &event) {
   // If the component was created in C++ it won't have a Python object
   // associated with it. Create one.
   if ( !event.component->object ) {
-    py::object module = py::module::import(event.component->module.c_str());
-    py::object cls = module.attr(event.component->cls.c_str());
-    py::object from_raw_entity = cls.attr("_from_raw_entity");
-    py::list args;
-    if ( py::len(event.component->args) != 0 ) {
-      args.append(event.component->args);
-    }
-    py::kwargs kwargs;
-    kwargs["entity"] = Entity(event.entity);
     try {
+      // TODO(SMA): use system.importer and import objects while always "hot reloading" them.
+      // this might be a -little- inefficent, try to measure cost here.
+      py::object importer = py::module::import("entityx.importer");
+      py::object import_f = importer.attr("reload");
+      py::object module = import_f.call(event.component->module);
+      py::object cls = module.attr(event.component->cls.c_str());
+      py::object from_raw_entity = cls.attr("_from_raw_entity");
+      py::list args;
+      if ( py::len(event.component->args) != 0 ) {
+        args.append(event.component->args);
+      }
+      py::kwargs kwargs;
+      kwargs["entity"] = Entity(event.entity);
       // Access PythonEntity and call Update.
       ComponentHandle<PythonScript> scripthandle = event.component;
-      scripthandle->object = from_raw_entity.call<py::return_value_policy::reference_internal>(*args, **kwargs);
+      scripthandle->object = from_raw_entity.operator()<py::return_value_policy::reference_internal>(*args, **kwargs);
     }
     catch ( const py::error_already_set& e ) {
       PyErr_SetString(PyExc_RuntimeError, e.what());

@@ -112,8 +112,8 @@ TEST_CASE_METHOD(PythonSystemTest, "TestComponentAssignmentCreationInPython") {
     REQUIRE(static_cast<bool>(e.component<Position>()));
     REQUIRE(script->object);
     REQUIRE(script->object.attr("test_assign_create").ptr());
-    py::function f = script->object.attr("test_assign_create");
-    f.call();
+    py::object f = script->object.attr("test_assign_create");
+    f();
     auto position = e.component<Position>();
     REQUIRE(static_cast<bool>(position));
     REQUIRE(position->x == 1.0);
@@ -224,7 +224,7 @@ TEST_CASE_METHOD(PythonSystemTest, "TestJSONOutputCpp") {
         REQUIRE(direction->x == 1.0);
         REQUIRE(direction->y == -1.0);
         py::module m("json");
-        py::dict parsed = m.attr("loads").call(o);
+        py::dict parsed = py::cast<py::dict>(m.attr("loads")(o));
         // Incase you need to debug.
         //for ( auto item : parsed )
         //    py::print("key: {}, value={}"_s.format(item.first, item.second));
@@ -232,10 +232,10 @@ TEST_CASE_METHOD(PythonSystemTest, "TestJSONOutputCpp") {
         REQUIRE(py::cast<std::string>(parsed["entity"]["id"]) == "<Entity::Id 0.1>");
         REQUIRE(py::cast<std::string>(parsed["id"]) == "<Entity::Id 0.1>");
         REQUIRE(py::cast<std::string>(parsed["py_array"]) == "[1, 2, 3]");
-        py::dict py_pos = parsed["position"];
+        py::dict py_pos = py::cast<py::dict>(parsed["position"]);
         REQUIRE((float)py::float_(py_pos["x"]) == 2.0f);
         REQUIRE((float)py::float_(py_pos["y"]) == 4.0f);
-        py::dict py_dir = parsed["direction"];
+        py::dict py_dir = py::cast<py::dict>(parsed["direction"]);
         REQUIRE((float)py::float_(py_dir["x"]) == 1.0f);
         REQUIRE((float)py::float_(py_dir["y"]) == -1.0f);
     }
