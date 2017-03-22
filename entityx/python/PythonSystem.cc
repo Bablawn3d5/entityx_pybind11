@@ -255,7 +255,7 @@ void PythonSystem::receive(const ComponentAddedEvent<PythonScript> &event) {
       // this might be a -little- inefficent, try to measure cost here.
       py::object importer = py::module::import("entityx.importer");
       py::object import_f = importer.attr("reload");
-      py::object module = import_f.call(event.component->module);
+      py::object module = import_f(event.component->module);
       py::object cls = module.attr(event.component->cls.c_str());
       py::object from_raw_entity = cls.attr("_from_raw_entity");
       py::list args;
